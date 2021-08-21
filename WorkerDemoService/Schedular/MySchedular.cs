@@ -14,27 +14,32 @@ namespace WorkerDemoService.Schedular
     {
         public IScheduler Scheduler { get; set; }
         private readonly IJobFactory jobFactory;
-        private readonly JobMetadata jobMetadata;
+        private readonly List<JobMetadata> jobMetadatas;
         private readonly ISchedulerFactory schedulerFactory;
 
-        public MySchedular(ISchedulerFactory schedulerFactory,JobMetadata jobMetadata,IJobFactory jobFactory)
+        public MySchedular(ISchedulerFactory schedulerFactory,List<JobMetadata> jobMetadatas,IJobFactory jobFactory)
         {
             this.jobFactory = jobFactory;
             this.schedulerFactory = schedulerFactory;
-            this.jobMetadata = jobMetadata;
+            this.jobMetadatas = jobMetadatas;
         }
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             //Creating Schdeular
             Scheduler = await schedulerFactory.GetScheduler();
             Scheduler.JobFactory = jobFactory;
-            //Create Job
-            IJobDetail jobDetail = CreateJob(jobMetadata);
-            //Create trigger
-            ITrigger trigger = CreateTrigger(jobMetadata);
-            //Schedule Job
-            await Scheduler.ScheduleJob(jobDetail, trigger, cancellationToken);
-            //Start The Schedular
+
+            //Suporrt for Multiple Jobs
+            jobMetadatas?.ForEach(jobMetadata =>
+            {
+                //Create Job
+                IJobDetail jobDetail = CreateJob(jobMetadata);
+                //Create trigger
+                ITrigger trigger = CreateTrigger(jobMetadata);
+                //Schedule Job
+                Scheduler.ScheduleJob(jobDetail, trigger, cancellationToken).GetAwaiter();
+                //Start The Schedular
+            });
             await Scheduler.Start(cancellationToken);
         }
 

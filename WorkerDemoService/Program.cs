@@ -25,14 +25,21 @@ namespace WorkerDemoService
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    //services.AddHostedService<Worker>();
-                    //services.AddHostedService<MyService>();
-
                     services.AddSingleton<IJobFactory, MyJobFactory>();
-                    services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-                    services.AddSingleton<NotificationJob>();
+                    services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();                    
 
-                    services.AddSingleton(new JobMetadata(Guid.NewGuid(), typeof(NotificationJob), "Notify Job", "0/10 * * * * ?"));
+                    #region Adding JobType
+                    services.AddSingleton<NotificationJob>();
+                    services.AddSingleton<LoggerJob>();
+                    #endregion
+
+                    #region Adding Jobs 
+                    List<JobMetadata> jobMetadatas = new List<JobMetadata>();
+                    jobMetadatas.Add(new JobMetadata(Guid.NewGuid(), typeof(NotificationJob), "Notify Job", "0/10 * * * * ?"));
+                    jobMetadatas.Add(new JobMetadata(Guid.NewGuid(), typeof(LoggerJob), "Log Job", "0/5 * * * * ?"));
+                    
+                    services.AddSingleton(jobMetadatas);
+                    #endregion
 
                     services.AddHostedService<MySchedular>();
                 });
